@@ -5,11 +5,14 @@ import time
 from gpt import expires_at, create_new_token
 
 MAX_USER_STT_BLOCKS = 12
+folder_id = config.folder_id
+iam_token = config.iam_token
 
 def speech_to_text(data):
     # iam_token, folder_id для доступа к Yandex SpeechKit
-    iam_token = '<iam_token>'
-    folder_id = '<folder_id>'
+    if expires_at < time.time():
+        global iam_token
+        iam_token = create_new_token()
 
     # Указываем параметры запроса
     params = "&".join([
@@ -43,9 +46,6 @@ def text_to_speech(text):
     if expires_at < time.time():
         global iam_token
         iam_token = create_new_token()
-
-    iam_token = '<iam_token>'
-    folder_id = config.folder_id
     # Аутентификация через IAM-токен
     headers = {
         'Authorization': f'Bearer {iam_token}',
