@@ -5,15 +5,7 @@ from database_for_speech import *
 import math
 from gpt import *
 import logging
-from database import(
-    create_db,
-    create_table,
-    insert_data,
-    add_record_to_table,
-    execute_selection_query,
-    is_limit_users
-)
-
+from database import *
 import requests
 import telebot
 from telebot import types
@@ -61,8 +53,8 @@ def is_tts_symbol_limit(message, text):
     return len(text)
 
 
-def is_stt_block_limit(message, duration):
-    user_id = message.from_user.id
+def is_stt_block_limit(user_id, duration):
+    # user_id = message.from_user.id
 
     # Переводим секунды в аудиоблоки
     audio_blocks = math.ceil(duration / 15) # округляем в большую сторону
@@ -83,14 +75,17 @@ def is_stt_block_limit(message, duration):
 
     return audio_blocks
 
+#---------------------------------------обработчик команды--------------------------------------------------------------
 
 # Обрабатываем команду /stt into text
 @bot.message_handler(commands=['stt'])
 def stt_handler(message):
     user_id = message.from_user.id
-    bot.send_message(user_id, 'Отправь голосовое сообщение, чтобы я его распознал!')
+    bot.send_message(user_id, 'Отправь голосовое сообщение с указанием твоего вопроса!')
     bot.register_next_step_handler(message, stt)
 
+
+#---------------------------------------------перевод сообщений с помощью speech----------------------------------------
 
 # Переводим голосовое сообщение в текст после команды stt
 def stt(message):
@@ -119,19 +114,19 @@ def stt(message):
         insert_row_stt(user_id, text, stt_blocks)
         global user_answer
         user_answer[user_id] = text
-        bot.register_next_step_handler(answer_function)
+        bot.register_next_step_handler(message, answer_function_speech)
     else:
         bot.send_message(user_id, text)
 
 
 
 #отправка из текста в аудио
-def tts(message, text):
-    user_id = message.from_user.id
+def tts(user_id, text):
+    # user_id = message.from_user.id
     text = text
 
     # Считаем символы в тексте и проверяем сумму потраченных символов
-    text_symbol = is_tts_symbol_limit(message, text)
+    text_symbol = is_tts_symbol_limit(user_id, text)
     if text_symbol is None:
         return
 
@@ -147,10 +142,12 @@ def tts(message, text):
     else:
         bot.send_message(user_id, content)
 
+#--------------------------------------ответ от нейросети---------------------------------------------------------------
+
 #Команда, присылающая ответ от нейросети
 @bot.message_handler(commands=['begin'])
-def answer_function(call, user_answer=None):
-    user_id = call.message_id
+def answer_function_speech(message, user_answer=None):
+    user_id = message.from_user.id
 
     tokens: int = count_tokens(user_answer[user_id])
 
@@ -190,10 +187,10 @@ def answer_function(call, user_answer=None):
         )
 
         #генерация из текста в аудио
-        content = tts(text=results)
+        content = tts(user_id=user_id, text=results)
 
-        bot.send_message(call.message.chat.id, text=content)
-        bot.register_next_step_handler(start_function)
+        bot.send_audio(user_id, content)
+        bot.register_next_step_handler(message, start_function)
         # if call.data != 'button2':
         #     gpt.ask_gpt(text=user_answer, role=role, mode='end')
         #     #удаление ненужного
@@ -207,6 +204,6 @@ def answer_function(call, user_answer=None):
     except:
 
         bot.reply_to(
-            call,
+            message,
             f"Извини, я не смог сгенерировать для тебя ответ сейчас",
         )

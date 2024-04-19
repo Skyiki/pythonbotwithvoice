@@ -18,6 +18,7 @@ from datetime import datetime
 from transformers import AutoTokenizer
 from nou import *
 from botik_for_speech import *
+from check_for_speech import *
 
 user_answer = ""
 user = {}
@@ -39,6 +40,7 @@ def count_tokens(text):
     tokenizer = AutoTokenizer.from_pretrained("rhysjones/phi-2-orange")  # название модели
     return len(tokenizer.encode(text))
 
+#--------------------------------------------обработчики команд---------------------------------------------------------
 @bot.message_handler(commands=['start'])
 def start_function(message):
     user_id = message.from_user.id
@@ -84,6 +86,7 @@ def help_function(message):
                                    '/solve_task - можно задать роль боту \n'
                                    '/continue - бот продолжит формулировать ответ')
 
+#-------------------------------------------------генерация сообщения с помощью YaGPT-----------------------------------
 @bot.message_handler()
 def finals(message):
     user_id = message.from_user.id
