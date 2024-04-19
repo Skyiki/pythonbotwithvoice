@@ -3,11 +3,10 @@ import telebot
 from telebot import types
 import requests
 import logging
-import BOT
+import BOT_with_GPT
 import json
-from database import SQL
+import database
 
-sql = SQL()
 max_session = 3
 
 # Настройка логирования
@@ -28,7 +27,7 @@ max_tokens_in_task = 2048
 user = {}
 
 def check(self, user_id):
-    result = sql.select_info(user_id)
+    result = database.select_info(user_id)
 
 
 
