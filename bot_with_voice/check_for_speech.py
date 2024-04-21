@@ -1,5 +1,6 @@
 import telebot
 import config
+from bot_with_voice.database_for_speech import insert_row_stt
 from botik_for_speech import *
 from creds import get_bot_token, get_creds
 

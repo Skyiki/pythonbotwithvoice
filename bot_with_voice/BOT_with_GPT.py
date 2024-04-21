@@ -11,7 +11,7 @@ from datetime import datetime
 from transformers import AutoTokenizer
 from nou import *
 from check_for_speech import *
-from creds import get_bot_token, get_creds  # модуль для получения bot_token
+from creds import get_bot_token, get_creds  # модуль для получения bot_token.txt
 
 user_answer = ""
 user = {}
@@ -23,7 +23,7 @@ assistant_content = 'Ответь на вопрос:'
 role = 'Ты дружелюбный помощник. Пиши на русском языке'
 limit_users = 10
 
-iam_token, folder_id = get_creds()  # получаем iam_token и folder_id из файлов
+iam_token, folder_id = get_creds()  # получаем iam_token.txt и folder_id.txt из файлов
 
 try:
     bot = telebot.TeleBot(get_bot_token())  # создаём объект бота

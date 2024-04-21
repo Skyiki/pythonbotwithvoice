@@ -10,7 +10,7 @@ MAX_USER_STT_BLOCKS = 12
 iam_token, folder_id = get_creds()
 
 def speech_to_text(data):
-    # iam_token, folder_id для доступа к Yandex SpeechKit
+    # iam_token.txt, folder_id.txt для доступа к Yandex SpeechKit
     if expires_at < time.time():
         global iam_token
         iam_token = create_new_token()
@@ -43,7 +43,7 @@ def speech_to_text(data):
         return False, "При запросе в SpeechKit возникла ошибка"
 
 def text_to_speech(text):
-    # iam_token, folder_id для доступа к Yandex SpeechKit
+    # iam_token.txt, folder_id.txt для доступа к Yandex SpeechKit
     if expires_at < time.time():
         global iam_token
         iam_token = create_new_token()
