@@ -5,7 +5,8 @@ import logging
 DB_DIR = 'db'
 DB_NAME = 'db.sqlite'
 DB_TABLE_USERS_NAME = 'users'
-MAX_USERS = 3
+MAX_USERS = 10
+
 
     #создание базы данных
 # Функция для подключения к базе данных или создания новой, если её ещё нет
@@ -71,18 +72,17 @@ def create_table(table_name):
                     f'session_id INTEGER)'
     execute_query(DB_NAME, sql_query)
 
-def insert_data(self, user_id):
+def insert_data(user_id):
     con = sqlite3.connect('db.sqlite')
     cur = con.cursor()
 
     query = '''INSERT INTO users (user_id) VALUES (?)'''
     cur.execute(query, (user_id, ))
-    con.commit()
     con.close()
 
 
     #запрос к SQL по критериям
-def update_data(self, user_id, column, value):
+def update_data(user_id, column, value):
     con = sqlite3.connect('db.sqlite')
     cur = con.cursor()
 
@@ -93,7 +93,7 @@ def update_data(self, user_id, column, value):
     con.close()
 
 #извлечение информации о пользователе
-def select_info(self, user_id):
+def select_info(user_id):
     con = sqlite3.connect('db.sqlite')
     con.row_factory = sqlite3.Row
     cur = con.cursor()
@@ -103,7 +103,7 @@ def select_info(self, user_id):
     con.close()
 
 #удаление данных пользователя с таблицы
-def delete(self, user_id):
+def delete(user_id):
     con = sqlite3.connect('db.sqlite')
     cur = con.cursor()
 
@@ -113,7 +113,7 @@ def delete(self, user_id):
     con.close()
 
 #удаляет все записи из таблицу, надо записывать название таблицы
-def delete_table(self, table_name):
+def delete_table(table_name):
     execute_query(f'DELETE FROM {table_name}')
 
 
@@ -131,15 +131,17 @@ def add_record_to_table(user_id, role, content, date, tokens, session_id):
                [user_id, role, content, date, tokens, session_id],
                columns=['user_id', 'role', 'content', 'date', 'tokens', 'session_id'])
 
-#проверка количества пользователей в таблице
-def is_limit_users():
-    connection = sqlite3.connect('sqlite3.db')
 
-    cursor = connection.cursor()
-    result = cursor.execute('SELECT DISTINCT user_id FROM table_name;')
-
-    count = 0  # количество пользователей
-    for i in result:  # считаем количество полученных строк
-        count += 1  # одна строка == один пользователь
-    connection.close()
-    return count >= MAX_USERS
+# считаем количество уникальных пользователей помимо самого пользователя
+def is_limit_users(user_id):
+    try:
+        # подключаемся к базе данных
+        with sqlite3.connect(DB_TABLE_USERS_NAME) as conn:
+            cursor = conn.cursor()
+            # получаем количество уникальных пользователей помимо самого пользователя
+            cursor.execute('''SELECT COUNT(DISTINCT user_id) FROM messages WHERE user_id <> ?''', (user_id,))
+            count = cursor.fetchone()[0]
+            return count
+    except Exception as e:
+        logging.error(e)  # если ошибка - записываем её в логи
+        return None

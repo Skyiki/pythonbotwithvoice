@@ -149,9 +149,9 @@ def tts(user_id, text):
 def answer_function_speech(message, user_answer=None):
     user_id = message.from_user.id
 
-    tokens: int = count_tokens(user_answer[user_id])
+    tokens: int = count_gpt_tokens(user_answer[user_id])
 
-    if is_tokens_limit(user_id, user_id, tokens, bot):
+    if is_tokens_limit(user_id, tokens, bot):
         return
 
     row: sqlite3.Row = session[user_id]
@@ -169,11 +169,11 @@ def answer_function_speech(message, user_answer=None):
     bot.send_message(user_id, 'Генерирую ответ...')
     try:
 
-        results = ask_gpt(text=user_answer[user_id], role=role, mode='continue')
+        results = ask_gpt(messages=user_answer[user_id])
 
-        tokens: int = count_tokens(results)
+        tokens: int = count_gpt_tokens(results)
 
-        if is_tokens_limit(user_id, user_id, tokens, bot):
+        if is_tokens_limit(user_id, tokens, bot):
             return
 
         #создание новой строчки в таблице с assistant

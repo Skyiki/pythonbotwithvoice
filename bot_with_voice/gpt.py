@@ -16,15 +16,17 @@ END_STORY = 'Напиши завершение истории c неожидан
 
 GPT_MODEL = 'yandexgpt'
 # Ограничение на выход модели в токенах
-MAX_MODEL_TOKENS = 50
+MAX_MODEL_TOKENS = 150
 # Креативность GPT (от 0 до 1)
 MODEL_TEMPERATURE = 0.6
 
-token_data = {}
 expires_at = []
 DB_DIR = 'db'
 DB_NAME = 'db.sqlite'
 DB_TABLE_USERS_NAME = 'users'
+token_data = {"access_token":"t1.9euelZqSz83Pko3GyseMz5mXi4mcku3rnpWalpKUx5eTmJaSmpHMmpvJmsnl9PcFRWtO-e8MS32v3fT3RXNoTvnvDEt9r83n9euelZrNnYyMzJWOncyPmY7Ol5zPxu_8xeuelZrN"
+"nYyMzJWOncyPmY7Ol5zPxr3rnpWay8qQlI3LzseUzYySnZrOi5O13oac0ZyQko-Ki5rRi5nSnJCSj4qLmtKSmouem56LntKMng.SDGab_1A2R8QLioCAPFs6jfp2uV0rNzbK6Rvmc5yNWV9rZkq8LT_s63Zx"
+"OQGt90MEnu7RtBBcqclafODCeKfDw","expires_in":43200, "token_type":"Bearer"}
 
 SYSTEM_PROMPT = (
     "Ты пишешь историю вместе с человеком. "
@@ -36,41 +38,29 @@ SYSTEM_PROMPT = (
 
 TOKEN = config.iam_token  # Токен для доступа к YandexGPT изменяется каждые 12 часов
 FOLDER_ID = config.folder_id  # Folder_id для доступа к YandexGPT
+IAM_TOKEN = config.iam_token
 
-# Подсчитывает количество токенов в сессии
-# messages - все промты из указанной сессии
-def count_tokens(messages: sqlite3.Row):
+# подсчитываем количество токенов в сообщениях
+def count_gpt_tokens(messages):
+    url = "https://llm.api.cloud.yandex.net/foundationModels/v1/tokenizeCompletion"
     headers = {
-        'Authorization': f'Bearer {TOKEN}',
+        'Authorization': f'Bearer {IAM_TOKEN}',
         'Content-Type': 'application/json'
     }
     data = {
-       "modelUri": f"gpt://{FOLDER_ID}/yandexgpt/latest",
-       "maxTokens": MAX_MODEL_TOKENS,
-       "messages": []
+        'modelUri': f"gpt://{FOLDER_ID}/yandexgpt-lite",
+        "messages": messages
     }
+    try:
+        return len(requests.post(url=url, json=data, headers=headers).json()['tokens'])
+    except Exception as e:
+        logging.error(e)  # если ошибка - записываем её в логи
+        return 0
 
-        # Проходимся по всем сообщениям и добавляем их в список
-    for row in messages:
-        data["messages"].append(
-            {
-                "role": row["role"],
-                "text": row["content"]
-            }
-        )
-
-
-    return len(
-        requests.post(
-            "https://llm.api.cloud.yandex.net/foundationModels/v1/tokenizeCompletion",
-            json=data,
-            headers=headers
-        ).json()["tokens"]
-    )
 
 
 # Функция получает идентификатор пользователя, чата и самого бота, чтобы иметь возможность отправлять сообщения
-def is_tokens_limit(user_id, chat_id, tokens, bot):
+def is_tokens_limit(chat_id, tokens, bot):
     # В зависимости от полученного числа выводим сообщение
     if tokens >= MAX_MODEL_TOKENS:
         bot.send_message(
@@ -138,57 +128,31 @@ def create_prompt(user_data, user_id):
     return prompt
 
 # Выполняем запрос к YandexGPT
-def ask_gpt(text, role, mode='continue'):
-    """Запрос к Yandex GPT"""
-
-    if expires_at < time.time():
-        global FOLDER_ID
-        FOLDER_ID = create_new_token()
-
-    # Добавление инструкций в зависимости от режима работы
-    if mode == 'continue':
-        text += '\n' + CONTINUE_STORY
-    elif mode == 'end':
-        text += '\n' + END_STORY
-
-    # URL для запроса к YandexGPT
-    url = f"https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
-
-    # Заголовки запроса, включая токен авторизации
+# запрос к GPT
+def ask_gpt(messages):
+    url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
     headers = {
-        'Authorization': f'Bearer {TOKEN}',
+        'Authorization': f'Bearer {IAM_TOKEN}',
         'Content-Type': 'application/json'
     }
-
     data = {
-        "modelUri": f"gpt://{FOLDER_ID}/{GPT_MODEL}/latest",
+        'modelUri': f"gpt://{FOLDER_ID}/yandexgpt-lite",
         "completionOptions": {
             "stream": False,
-            "temperature": MODEL_TEMPERATURE,
+            "temperature": 0.7,
             "maxTokens": MAX_MODEL_TOKENS
         },
-        "messages": [
-            {"role": "system", "text": role}, #роль нейросети в диалоге
-            {"role": "user", "text": text}, #задание от пользователя
-            # Можно продолжить диалог
-            {"role": "assistant", "text": ""}
-        ]
+        "messages": SYSTEM_PROMPT + messages  # добавляем к системному сообщению предыдущие сообщения
     }
-
     try:
         response = requests.post(url, headers=headers, json=data)
+        # проверяем статус код
         if response.status_code != 200:
-            logging.debug(f"Response {response.json()} Status code:{response.status_code} Message {response.text}")
-            result = f"Status code {response.status_code}. Подробности см. в журнале."
-            return result
-        print("\n\nТУТ", response.json(), "ТУТ\n\n")
-        result = response.json()['result']['alternatives'][0]['message']['text']
-        logging.info(f"Request: {response.request.url}\n"
-                     f"Response: {response.status_code}\n"
-                     f"Response Body: {response.text}\n"
-                     f"Processed Result: {result}")
+            return False, f"Ошибка GPT. Статус-код: {response.status_code}", None
+        # если всё успешно - считаем количество токенов, потраченных на ответ, возвращаем статус, ответ, и количество токенов в ответе
+        answer = response.json()['result']['alternatives'][0]['message']['text']
+        tokens_in_answer = count_gpt_tokens([{'role': 'assistant', 'text': answer}])
+        return True, answer, tokens_in_answer
     except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
-        result = "Произошла непредвиденная ошибка. Подробности см. в журнале."
-
-    return result
+        logging.error(e)  # если ошибка - записываем её в логи
+        return False, "Ошибка при обращении к GPT",  None
