@@ -3,10 +3,11 @@ import config
 import gpt
 import time
 from gpt import expires_at, create_new_token
+from creds import get_bot_token, get_creds
 
 MAX_USER_STT_BLOCKS = 12
-folder_id = config.folder_id
-iam_token = config.iam_token
+
+iam_token, folder_id = get_creds()
 
 def speech_to_text(data):
     # iam_token, folder_id для доступа к Yandex SpeechKit

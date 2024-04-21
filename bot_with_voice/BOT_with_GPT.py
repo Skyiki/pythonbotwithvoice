@@ -10,7 +10,6 @@ from telebot import types
 from datetime import datetime
 from transformers import AutoTokenizer
 from nou import *
-from botik_for_speech import *
 from check_for_speech import *
 from creds import get_bot_token, get_creds  # модуль для получения bot_token
 
