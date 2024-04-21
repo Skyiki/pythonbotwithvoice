@@ -6,6 +6,7 @@ import logging
 import BOT_with_GPT
 import json
 import database
+from creds import get_bot_token, get_creds
 
 max_session = 3
 
@@ -17,7 +18,7 @@ logging.basicConfig(
     filemode="w",
 )
 
-bot = telebot.TeleBot(token=config.token)
+bot = telebot.TeleBot(get_bot_token())
 
 system_content = 'Ты - дружелюбный помощник! Давай подробный ответ на русском языке.'
 task = ''

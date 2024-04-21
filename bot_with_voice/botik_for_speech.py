@@ -13,9 +13,12 @@ from datetime import datetime
 from transformers import AutoTokenizer
 from nou import *
 from BOT_with_GPT import *
+from creds import get_bot_token, get_creds
+
+iam_token, folder_id = get_creds(
 
 try:
-    bot = telebot.TeleBot(token=config.token)
+    bot = telebot.TeleBot(get_bot_token())
 except:
     token = input(str('Напиши токен бота'))
     bot = telebot.TeleBot(token=token)

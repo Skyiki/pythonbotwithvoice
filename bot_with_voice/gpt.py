@@ -5,6 +5,7 @@ import sqlite3
 import telebot
 import database_for_speech
 import time
+from creds import get_bot_token, get_creds
 
 
 logging.basicConfig(level=logging.DEBUG,
@@ -36,19 +37,17 @@ SYSTEM_PROMPT = (
     "Не пиши никакого пояснительного текста в начале, а просто логично продолжай историю."
 )
 
-TOKEN = config.iam_token  # Токен для доступа к YandexGPT изменяется каждые 12 часов
-FOLDER_ID = config.folder_id  # Folder_id для доступа к YandexGPT
-IAM_TOKEN = config.iam_token
+iam_token, folder_id = get_creds()
 
 # подсчитываем количество токенов в сообщениях
 def count_gpt_tokens(messages):
     url = "https://llm.api.cloud.yandex.net/foundationModels/v1/tokenizeCompletion"
     headers = {
-        'Authorization': f'Bearer {IAM_TOKEN}',
+        'Authorization': f'Bearer {iam_token}',
         'Content-Type': 'application/json'
     }
     data = {
-        'modelUri': f"gpt://{FOLDER_ID}/yandexgpt-lite",
+        'modelUri': f"gpt://{folder_id}/yandexgpt-lite",
         "messages": messages
     }
     try:
@@ -132,11 +131,11 @@ def create_prompt(user_data, user_id):
 def ask_gpt(messages):
     url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
     headers = {
-        'Authorization': f'Bearer {IAM_TOKEN}',
+        'Authorization': f'Bearer {iam_token}',
         'Content-Type': 'application/json'
     }
     data = {
-        'modelUri': f"gpt://{FOLDER_ID}/yandexgpt-lite",
+        'modelUri': f"gpt://{folder_id}/yandexgpt-lite",
         "completionOptions": {
             "stream": False,
             "temperature": 0.7,

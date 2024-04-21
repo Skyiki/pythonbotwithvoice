@@ -1,9 +1,10 @@
 import telebot
 import config
 from botik_for_speech import *
+from creds import get_bot_token, get_creds
 
 try:
-    bot = telebot.TeleBot(token=config.token)
+    bot = telebot.TeleBot(get_bot_token())
 except:
     token = input(str('Напиши токен бота'))
     bot = telebot.TeleBot(token=token)
