@@ -15,7 +15,7 @@ from nou import *
 from BOT_with_GPT import *
 from creds import get_bot_token, get_creds
 
-iam_token, folder_id = get_creds(
+iam_token, folder_id = get_creds()
 
 try:
     bot = telebot.TeleBot(get_bot_token())
